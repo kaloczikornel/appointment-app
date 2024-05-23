@@ -2,7 +2,11 @@ package com.example.routes
 
 import com.example.controllers.AvailabilityService
 import com.example.controllers.UsersService
-import com.example.models.*
+import com.example.models.AvailabilityCreateRequest
+import com.example.models.AvailabilityCreateSchema
+import com.example.models.AvailabilityFilter
+import com.example.models.Role
+import com.example.utils.getDayOfWeek
 import com.example.utils.toDate
 import com.example.utils.toDay
 import io.ktor.http.*
@@ -13,13 +17,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.text.SimpleDateFormat
-import java.util.*
-
-fun Date.getDayOfWeek(): Int {
-    val calendar = Calendar.getInstance()
-    calendar.time = this
-    return calendar.get(Calendar.DAY_OF_WEEK)
-}
 
 fun Route.availabilityRoutes(availabilityService: AvailabilityService, usersService: UsersService) {
     route("/availability") {
@@ -50,21 +47,18 @@ fun Route.availabilityRoutes(availabilityService: AvailabilityService, usersServ
                 call.respond(HttpStatusCode.BadRequest, "Start time must be before end time")
                 return@post
             }
-            when (availability.startTime.getDayOfWeek()) {
-                1 -> Day.SUNDAY
-                2 -> Day.MONDAY
-                3 -> Day.TUESDAY
-                4 -> Day.WEDNESDAY
-                5 -> Day.THURSDAY
-                6 -> Day.FRIDAY
-                7 -> Day.SATURDAY
-                else -> null
-            }?. let {
-                val availabilityObject =
-                    AvailabilityCreateSchema(id, it, availability.startTime, availability.endTime)
-                val availabilityId = availabilityService.create(availabilityObject)
-                call.respond(HttpStatusCode.Created, availabilityId)
-            }
+            availability.startTime.getDayOfWeek()
+                ?.let {
+                    val availabilityObject =
+                        AvailabilityCreateSchema(
+                            providerId = id,
+                            day = it,
+                            availability.startTime,
+                            availability.endTime
+                        )
+                    val availabilityId = availabilityService.create(availabilityObject)
+                    call.respond(HttpStatusCode.Created, availabilityId)
+                }
 
         }
         delete("/{id}") {
@@ -85,11 +79,11 @@ fun Route.availabilityRoutes(availabilityService: AvailabilityService, usersServ
                 call.respond(HttpStatusCode.BadRequest, "Availability id is required")
                 return@delete
             }
-            val deleted = availabilityService.delete(id) ?: run {
+            availabilityService.delete(id) ?: run {
                 call.respond(HttpStatusCode.NotFound, "Availability not found with id $id")
                 return@delete
             }
-            call.respond(HttpStatusCode.OK, deleted)
+            call.respond(HttpStatusCode.OK, "Availability deleted")
         }
     }
     route("/availabilities") {
@@ -122,30 +116,25 @@ fun Route.availabilityRoutes(availabilityService: AvailabilityService, usersServ
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid query parameters")
             }
-
         }
-
-        get("/{providerId}") {
+        get("/my") {
             val principal = call.principal<JWTPrincipal>() ?: error("No principal")
-            val userId = principal.payload.getClaim("id").asString()
-            val user = usersService.read(userId) ?: run {
-                call.respond(HttpStatusCode.NotFound, "User not found with id $userId")
+            val id = principal.payload.getClaim("id").asString()
+            val user = usersService.read(id) ?: run {
+                call.respond(HttpStatusCode.NotFound, "User not found with id $id")
                 return@get
             }
-            if (user.role != Role.CLIENT) {
+            if (user.role != Role.PROVIDER) {
                 call.respond(
                     HttpStatusCode.Forbidden,
-                    "User is not a client, only clients can view provider availabilities"
+                    "User is not a provider, only providers can view their availabilities"
                 )
                 return@get
             }
-            val providerId = call.parameters["providerId"] ?: run {
-                call.respond(HttpStatusCode.BadRequest, "Provider id is required")
-                return@get
-            }
-            availabilityService.readByProviderId(providerId).also {
+            availabilityService.readByProviderId(id).also {
                 call.respond(HttpStatusCode.OK, it)
             }
+
         }
     }
 }

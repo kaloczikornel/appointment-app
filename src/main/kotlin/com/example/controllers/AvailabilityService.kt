@@ -30,17 +30,12 @@ class AvailabilityService(private val database: MongoDatabase) {
         collection.findOneAndDelete(Filters.eq("_id", ObjectId(id)))
     }
 
-    // Read an availability by provider id
-    suspend fun readByProviderId(providerId: String): List<AvailabilitySchema> = withContext(Dispatchers.IO) {
-        collection.find(Filters.eq("userId", providerId)).map(AvailabilitySchema::fromDocument).toList()
-    }
-
     // Read an availability between a start and end time
     suspend fun readByTimeAndId(userId: String, startTime: Date, endTime: Date): List<AvailabilitySchema> =
         withContext(Dispatchers.IO) {
             collection.find(
                 Filters.and(
-                    Filters.eq("userId", userId),
+                    Filters.eq("providerId", userId),
                     Filters.lte("startTime", df.format(startTime)),
                     Filters.gte("endTime", df.format(endTime))
                 )
@@ -70,6 +65,11 @@ class AvailabilityService(private val database: MongoDatabase) {
         } else {
             collection.find().map(AvailabilitySchema::fromDocument).toList()
         }
+    }
+
+    // read all availabilities by provider id
+    suspend fun readByProviderId(providerId: String): List<AvailabilitySchema> = withContext(Dispatchers.IO) {
+        collection.find(Filters.eq("providerId", providerId)).map(AvailabilitySchema::fromDocument).toList()
     }
 
 

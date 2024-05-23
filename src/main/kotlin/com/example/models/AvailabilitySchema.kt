@@ -36,7 +36,7 @@ data class AvailabilitySchema(
 @Serializable
 data class AvailabilityCreateSchema(
     @BsonId
-    val clientId: String,
+    val providerId: String,
     val day: Day,
     @Serializable(with = DateSerializer::class) val startTime: Date,
     @Serializable(with = DateSerializer::class) val endTime: Date,

@@ -6,6 +6,7 @@ import com.example.controllers.UsersService
 import com.example.models.AppointmentRequest
 import com.example.models.AppointmentSchema
 import com.example.models.Role
+import com.example.utils.getDayOfWeek
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -53,10 +54,14 @@ fun Route.appointmentRoutes(
                 )
                 return@post
             }
+            val day = appointmentRequest.startTime.getDayOfWeek() ?: run {
+                call.respond(HttpStatusCode.BadRequest, "Invalid date")
+                return@post
+            }
             val appointment = AppointmentSchema(
                 userId,
                 appointmentRequest.providerId,
-                appointmentRequest.day,
+                day,
                 appointmentRequest.startTime,
                 appointmentRequest.endTime
             )
@@ -104,11 +109,11 @@ fun Route.appointmentRoutes(
                 call.respond(HttpStatusCode.Forbidden, "User is not authorized to delete this appointment")
                 return@delete
             }
-            val deleted = appointmentService.delete(id) ?: run {
+            appointmentService.delete(id) ?: run {
                 call.respond(HttpStatusCode.NotFound, "Appointment not found with id $id")
                 return@delete
             }
-            call.respond(HttpStatusCode.OK, deleted)
+            call.respond(HttpStatusCode.OK, "Appointment deleted")
         }
     }
     get("/my-appointments") {

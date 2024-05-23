@@ -21,3 +21,19 @@ fun String.toDay(): Day {
         else -> throw IllegalArgumentException("Invalid day")
     }
 }
+
+fun Date.getDayOfWeek(): Day? {
+    val calendar = Calendar.getInstance()
+    calendar.time = this
+
+    return when (calendar.get(Calendar.DAY_OF_WEEK)) {
+        1 -> Day.SUNDAY
+        2 -> Day.MONDAY
+        3 -> Day.TUESDAY
+        4 -> Day.WEDNESDAY
+        5 -> Day.THURSDAY
+        6 -> Day.FRIDAY
+        7 -> Day.SATURDAY
+        else -> null
+    }
+}

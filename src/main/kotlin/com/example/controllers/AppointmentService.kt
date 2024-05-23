@@ -38,23 +38,7 @@ class AppointmentService(private val database: MongoDatabase) {
     }
 
     suspend fun readByClientId(clientId: String): List<AppointmentResponse> = withContext(Dispatchers.IO) {
-        collection.find(Filters.eq("userId", clientId)).map(AppointmentResponse::fromDocument).toList()
-    }
-
-    // Update an appointment by id
-    suspend fun update(id: String, appointment: AppointmentSchema): Boolean = withContext(Dispatchers.IO) {
-        val doc = appointment.toDocument()
-        collection.findOneAndReplace(Filters.eq("_id", ObjectId(id)), doc) != null
-    }
-
-    // Read all appointments
-    suspend fun readAll(): List<AppointmentSchema> = withContext(Dispatchers.IO) {
-        collection.find().map(AppointmentSchema::fromDocument).toList()
-    }
-
-    // Read all appointments by date
-    suspend fun readByDate(date: String): List<AppointmentSchema> = withContext(Dispatchers.IO) {
-        collection.find(Filters.eq("date", date)).map(AppointmentSchema::fromDocument).toList()
+        collection.find(Filters.eq("clientId", clientId)).map(AppointmentResponse::fromDocument).toList()
     }
 
     // Read all appointments by provider id and date

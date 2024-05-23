@@ -188,22 +188,12 @@ paths:
               properties:
                 providerId:
                   type: string
-                day:
-                  type: string
-                  enum:
-                    - MONDAY
-                    - TUESDAY
-                    - WEDNESDAY
-                    - THURSDAY
-                    - FRIDAY
-                    - SATURDAY
-                    - SUNDAY
                 startTime:
                   type: string
-                  format: date-time
+                  example: "2024-05-02T12:00:00.000+0200"
                 endTime:
                   type: string
-                  format: date-time
+                  example: "2024-05-02T12:00:00.000+0200"
       responses:
         201:
           description: Created
@@ -249,9 +239,9 @@ paths:
         200:
           description: OK
           content:
-            'application/json':
+            'text/plain':
               schema:
-                type: object
+                type: string
         404:
           $ref: "#/components/responses/NotFound"
       security:
@@ -269,10 +259,10 @@ paths:
               properties:
                 startTime:
                   type: string
-                  format: date-time
+                  example: "2024-05-02T12:00:00.000+0200"
                 endTime:
                   type: string
-                  format: date-time
+                  example: "2024-05-02T17:00:00.000+0200"
       responses:
         201:
           description: Created
@@ -299,9 +289,9 @@ paths:
         200:
           description: OK
           content:
-            'application/json':
+            'text/plain':
               schema:
-                type: object
+                type: string
         404:
           $ref: "#/components/responses/NotFound"
         403:
@@ -309,9 +299,9 @@ paths:
         400:
           description: Bad Request
           content:
-            'application/json':
+            'text/plain':
               schema:
-                type: object
+                type: string
       security:
         - bearerAuth: [ ]
   /availabilities:
@@ -340,12 +330,12 @@ paths:
           in: query
           schema:
             type: string
-            format: date-time
+            example: "2024-05-02T12:00:00.000+0200"
         - name: beforeTime
           in: query
           schema:
             type: string
-            format: date-time
+            example: "2024-05-02T12:00:00.000+0200"
       responses:
         200:
           description: OK
@@ -357,17 +347,11 @@ paths:
                   $ref: "#/components/schemas/Availability"
       security:
         - bearerAuth: [ ]
-  /availabilities/{providerId}:
+  /availabilities/my:
     get:
       tags:
         - availability
-      description: Get availabilities by provider
-      parameters:
-        - name: providerId
-          in: path
-          required: true
-          schema:
-            type: string
+      description: Get availabilities for a provider
       responses:
         200:
           description: OK
@@ -377,6 +361,8 @@ paths:
                 type: "array"
                 items:
                   $ref: "#/components/schemas/Availability"
+        404:
+          $ref: "#/components/responses/NotFound"
       security:
         - bearerAuth: [ ]
   /health:
@@ -426,10 +412,10 @@ components:
               - SUNDAY
           startTime:
             type: string
-            format: date-time
+            example: "2024-05-02T12:00:00.000+0200"
           endTime:
             type: string
-            format: date-time
+            example: "2024-05-02T12:00:00.000+0200"
     Availability:
         type: object
         properties:
@@ -449,10 +435,10 @@ components:
               - SUNDAY
           startTime:
             type: string
-            format: date-time
+            example: "2024-05-02T12:00:00.000+0200"
           endTime:
             type: string
-            format: date-time
+            example: "2024-05-02T12:00:00.000+0200"
   securitySchemes:
     bearerAuth:
       type: http
