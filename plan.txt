@@ -1,0 +1,62 @@
+Database plan:
+    Models:
+        - User:
+            - id
+            - username
+            - password
+            - email
+            - role:  enum('client', 'provider')
+            - description (null for clients)
+            - created_at
+            - updated_at
+        - Availability:
+            - id
+            - user_id
+            - day: enum('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+            - start_time
+            - end_time
+            - created_at
+            - updated_at
+        - Appointment:
+            - id
+            - user_id
+            - provider_id
+            - day: enum('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+            - start_time
+            - end_time
+            - created_at
+            - updated_at
+
+Use-cases:
+- As a user, I want to register a new account
+- As a user, I want to login to my account
+- As a user, I want to update my profile
+- As a user, I want to get all my appointments (so both as a client and as a provider)
+- As a provider, I want to create a new availability
+- As a provider, I want to get all my availabilities
+- As a client, I want to create a new appointment
+- As a client, I want to delete an appointment (can't update)
+- As a client, I want to list all appointments for a provider
+- As a client, I want to list all providers
+
+
+Routes:
+- POST      /register: register a new user
+- POST      /login: login a user
+- GET       /profile: get user profile
+- PUT       /profile: update user profile
+
+- POST      /availability: create a new availability, only for providers
+- DELETE    /availability/:id: delete an availability for providers
+- GET       /availabilities: get all availabilities for providers
+- GET       /:providerId/availabilities: get all availabilities for a provider, only for clients
+
+- POST      /:providerId/appointment: create a new appointment, only for clients
+- GET       /appointments: get all appointments for providers and clients
+- DELETE    /appointment/:id: delete an appointment for both clients and providers
+
+- GET       /providers: get all providers for clients
+
+
+
+

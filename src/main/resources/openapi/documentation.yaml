@@ -1,0 +1,479 @@
+openapi: "3.0.3"
+info:
+  title: "appointment API"
+  description: "appointment API"
+  version: "1.0.0"
+servers:
+- url: "http://localhost:3000"
+tags:
+  - name: auth
+    description: Operations about authentication
+  - name: user
+    description: Operations about users
+  - name: appointment
+    description: Operations about appointments
+  - name: availability
+    description: Operations about availability
+paths:
+  /register:
+    post:
+      tags:
+        - auth
+      description: Register user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum:
+                    - CLIENT
+                    - PROVIDER
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: object
+                description: JWT token for further requests
+                properties:
+                  token:
+                    type: string
+  /login:
+    post:
+      tags:
+        - auth
+      description: Login user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: object
+                description: JWT token for further requests
+                properties:
+                  token:
+                    type: string
+        401:
+          $ref: "#/components/responses/Unauthorized"
+
+  /user/profile:
+    get:
+      tags:
+        - user
+      description: Get user profile
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/User"
+        404:
+          $ref: "#/components/responses/NotFound"
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - user
+      description: Update user profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum:
+                    - CLIENT
+                    - PROVIDER
+                password:
+                  type: string
+                oldPassword:
+                  type: string
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/User"
+        404:
+          $ref: "#/components/responses/NotFound"
+      security:
+        - bearerAuth: [ ]
+  /user:
+    delete:
+      tags:
+        - user
+      description: Delete user
+      responses:
+        200:
+          description: OK
+          content:
+            'text/plain':
+              schema:
+                type: string
+        404:
+          $ref: "#/components/responses/NotFound"
+      security:
+        - bearerAuth: [ ]
+  /providers:
+    get:
+      tags:
+        - user
+      description: Get providers
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/User"
+      security:
+        - bearerAuth: [ ]
+  /my-appointments:
+    get:
+      tags:
+        - appointment
+      description: Get the user's appointments
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/Appointment"
+      security:
+        - bearerAuth: [ ]
+  /appointment:
+    post:
+      tags:
+        - appointment
+      description: Create appointment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerId:
+                  type: string
+                day:
+                  type: string
+                  enum:
+                    - MONDAY
+                    - TUESDAY
+                    - WEDNESDAY
+                    - THURSDAY
+                    - FRIDAY
+                    - SATURDAY
+                    - SUNDAY
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+      responses:
+        201:
+          description: Created
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/Appointment"
+      security:
+        - bearerAuth: [ ]
+  /appointment/{id}:
+    get:
+      tags:
+        - appointment
+      description: Get appointment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        404:
+          $ref: "#/components/responses/NotFound"
+      security:
+        - bearerAuth: [ ]
+    delete:
+      tags:
+          - appointment
+      description: Delete appointment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+              type: string
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: object
+        404:
+          $ref: "#/components/responses/NotFound"
+      security:
+        - bearerAuth: [ ]
+  /availability:
+    post:
+      tags:
+        - availability
+      description: Create availability
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+      responses:
+        201:
+          description: Created
+          content:
+            'application/json':
+              schema:
+                type: string
+        403:
+          $ref: "#/components/responses/Forbidden"
+      security:
+        - bearerAuth: [ ]
+  /availability/{id}:
+    delete:
+      tags:
+        - availability
+      description: Delete availability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: object
+        404:
+          $ref: "#/components/responses/NotFound"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        400:
+          description: Bad Request
+          content:
+            'application/json':
+              schema:
+                type: object
+      security:
+        - bearerAuth: [ ]
+  /availabilities:
+    get:
+      tags:
+        - availability
+      description: Get availabilities
+      parameters:
+        - name: providerId
+          in: query
+          schema:
+            type: string
+        - name: day
+          in: query
+          schema:
+            type: string
+            enum:
+              - mon
+              - tues
+              - wed
+              - thurs
+              - fri
+              - sat
+              - sun
+        - name: afterTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: beforeTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/Availability"
+      security:
+        - bearerAuth: [ ]
+  /availabilities/{providerId}:
+    get:
+      tags:
+        - availability
+      description: Get availabilities by provider
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/Availability"
+      security:
+        - bearerAuth: [ ]
+  /health:
+    get:
+      description: Health check endpoint
+      responses:
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+            - CLIENT
+            - PROVIDER
+    Appointment:
+        type: object
+        properties:
+          _id:
+            type: string
+          providerId:
+            type: string
+          clientId:
+            type: string
+          day:
+            type: string
+            enum:
+              - MONDAY
+              - TUESDAY
+              - WEDNESDAY
+              - THURSDAY
+              - FRIDAY
+              - SATURDAY
+              - SUNDAY
+          startTime:
+            type: string
+            format: date-time
+          endTime:
+            type: string
+            format: date-time
+    Availability:
+        type: object
+        properties:
+          _id:
+            type: string
+          providerId:
+            type: string
+          day:
+            type: string
+            enum:
+              - MONDAY
+              - TUESDAY
+              - WEDNESDAY
+              - THURSDAY
+              - FRIDAY
+              - SATURDAY
+              - SUNDAY
+          startTime:
+            type: string
+            format: date-time
+          endTime:
+            type: string
+            format: date-time
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    NotFound:
+      description: Not Found
+      content:
+        'application/json':
+          schema:
+            type: object
+    Unauthorized:
+      description: Unauthorized
+      content:
+        'application/json':
+          schema:
+            type: object
+    Forbidden:
+      description: Forbidden
+      content:
+        'application/json':
+          schema:
+            type: object
