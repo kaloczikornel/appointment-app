@@ -31,7 +31,7 @@ class AvailabilityService(private val database: MongoDatabase) {
     }
 
     // Read an availability between a start and end time
-    suspend fun readByTimeAndId(userId: String, startTime: Date, endTime: Date): List<AvailabilitySchema> =
+    suspend fun readByTimeAndId(userId: String, startTime: Date, endTime: Date): AvailabilitySchema? =
         withContext(Dispatchers.IO) {
             collection.find(
                 Filters.and(
@@ -40,7 +40,7 @@ class AvailabilityService(private val database: MongoDatabase) {
                     Filters.gte("endTime", df.format(endTime))
                 )
             )
-                .map(AvailabilitySchema::fromDocument).toList()
+                .map(AvailabilitySchema::fromDocument).firstOrNull()
         }
 
     // Read all availabilities

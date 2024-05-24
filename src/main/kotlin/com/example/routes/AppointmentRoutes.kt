@@ -5,6 +5,7 @@ import com.example.controllers.AvailabilityService
 import com.example.controllers.UsersService
 import com.example.models.AppointmentRequest
 import com.example.models.AppointmentSchema
+import com.example.models.AvailabilityCreateSchema
 import com.example.models.Role
 import com.example.utils.getDayOfWeek
 import io.ktor.http.*
@@ -33,13 +34,26 @@ fun Route.appointmentRoutes(
                 return@post
             }
             val appointmentRequest = call.receive<AppointmentRequest>()
+
+            if (appointmentRequest.startTime.after(appointmentRequest.endTime)) {
+                call.respond(HttpStatusCode.BadRequest, "Start time must be before end time")
+                return@post
+            }
+
+            if (appointmentRequest.startTime == appointmentRequest.endTime) {
+                call.respond(HttpStatusCode.BadRequest, "Start time and end time cannot be the same")
+                return@post
+            }
+
             val availability = availabilityService.readByTimeAndId(
                 appointmentRequest.providerId,
                 appointmentRequest.startTime,
                 appointmentRequest.endTime
-            )
-            if (availability.isEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, "No availability found")
+            ) ?: run {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Provider is not available between ${appointmentRequest.startTime} and ${appointmentRequest.endTime}"
+                )
                 return@post
             }
             val isFree = appointmentService.readByProviderIdAndDate(
@@ -66,6 +80,46 @@ fun Route.appointmentRoutes(
                 appointmentRequest.endTime
             )
             val appointmentId = appointmentService.create(appointment)
+
+            // now lets remove the original availability and make new ones based on the appointment
+            availabilityService.delete(availability.id.toString())
+
+            //if the appointment starts exactly at the availability start time, we just need to update the end time
+            if (availability.startTime == appointment.startTime) {
+                val newAvailability = AvailabilityCreateSchema(
+                    providerId = availability.providerId,
+                    day = availability.day,
+                    startTime = appointment.endTime,
+                    endTime = availability.endTime
+                )
+                availabilityService.create(newAvailability)
+            } else if (availability.endTime == appointment.endTime) {
+                // if the appointment ends exactly at the availability end time, we just need to update the start time
+                val newAvailability = AvailabilityCreateSchema(
+                    providerId = availability.providerId,
+                    day = availability.day,
+                    startTime = availability.startTime,
+                    endTime = appointment.startTime
+                )
+                availabilityService.create(newAvailability)
+            } else {
+                // otherwise we need to create two availabilities for the remaining time
+                val firstAvailability = AvailabilityCreateSchema(
+                    providerId = availability.providerId,
+                    day = availability.day,
+                    startTime = availability.startTime,
+                    endTime = appointment.startTime
+                )
+                val secondAvailability = AvailabilityCreateSchema(
+                    providerId = availability.providerId,
+                    day = availability.day,
+                    startTime = appointment.endTime,
+                    endTime = availability.endTime
+                )
+                availabilityService.create(firstAvailability)
+                availabilityService.create(secondAvailability)
+            }
+
             call.respond(HttpStatusCode.Created, appointmentId)
         }
         get("/{id}") {
