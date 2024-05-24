@@ -11,3 +11,6 @@ Make sure you have MongoDB installed and running on your machine. You can downlo
 3. Run the `main` function in `Application.kt`
 4. The app will start on `http://localhost:3000` by default
 5. You can access the API documentation at `http://localhost:3000/swagger-ui`
+
+
+The [repository](https://github.com/kaloczikornel/appointment-app).
